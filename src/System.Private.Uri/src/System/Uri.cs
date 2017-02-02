@@ -102,6 +102,7 @@ namespace System
                                                     // and Host values in case of a custom user Parser
             DosPath = 0x08000000,
             UncPath = 0x10000000,
+            //UnixPath = 0x20000,
             ImplicitFile = 0x20000000,
             MinimalUriInfoSet = 0x40000000,
             AllUriInfoSet = unchecked(0x80000000),
@@ -2022,6 +2023,7 @@ namespace System
             _flags &= ~(Flags.IndexMask | Flags.UserDrivenParsing);
 
             //STEP2: Parse up to the port
+            //System.Console.WriteLine($"PrivateParseMinimal {_originalUnicodeString} {_string}");
 
             fixed (char* pUriString = ((_iriParsing &&
                                         ((_flags & Flags.HasUnicode) != 0) &&
@@ -2107,7 +2109,7 @@ namespace System
                 //
                 //STEP 1.5 decide on the Authority component
                 //
-                if ((_flags & (Flags.UncPath | Flags.DosPath)) != 0)
+                if ((_flags & (Flags.UncPath | Flags.DosPath & Flags.ImplicitFile)) != 0)
                 {
                 }
                 else if ((idx + 2) <= length)
@@ -3661,11 +3663,9 @@ namespace System
                 char c;
                 if ((c = uriString[idx + 1]) == ':' || c == '|')
                 {
-                    //DOS-like path?
-                    if (UriHelper.IsAsciiLetter(uriString[idx]))
-                    {
-                        if ((c = uriString[idx + 2]) == '\\' || c == '/')
-                        {
+                    //Windows: DOS-like path?
+                    if (IsWindowsSystem && UriHelper.IsAsciiLetter(uriString[idx])) {
+                        if ((c = uriString[idx + 2]) == '\\' || c == '/') {
                             flags |= (Flags.DosPath | Flags.ImplicitFile | Flags.AuthorityFound);
                             syntax = UriParser.FileUri;
                             return idx;
@@ -3679,11 +3679,17 @@ namespace System
                         err = ParsingError.BadFormat;
                     return 0;
                 }
+                //Unix: Unix path?
+                else if (!IsWindowsSystem && uriString[idx] == '/')
+                {
+                    flags |= (/*Flags.UnixPath |*/ Flags.ImplicitFile | Flags.AuthorityFound);
+                    syntax = UriParser.FileUri;
+                    return idx;
+                }
                 else if ((c = uriString[idx]) == '/' || c == '\\')
                 {
-                    //UNC share ?
-                    if ((c = uriString[idx + 1]) == '\\' || c == '/')
-                    {
+                    //Windows: UNC share?
+                    if (IsWindowsSystem && ((c = uriString[idx + 1]) == '\\' || c == '/')) {
                         flags |= (Flags.UncPath | Flags.ImplicitFile | Flags.AuthorityFound);
                         syntax = UriParser.FileUri;
                         idx += 2;

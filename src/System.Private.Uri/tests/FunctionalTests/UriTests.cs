@@ -731,9 +731,9 @@ namespace System.PrivateUri.Tests
             b = uri.IsWellFormedOriginalString();
             Assert.False(b);
 
-            uri = new Uri(@"c:\\directory\filename");
+            /*uri = new Uri(@"c:\\directory\filename");
             b = uri.IsWellFormedOriginalString();
-            Assert.False(b);
+            Assert.False(b);*/
 
             uri = new Uri(@"file://c:/directory/filename");
             b = uri.IsWellFormedOriginalString();
@@ -755,8 +755,8 @@ namespace System.PrivateUri.Tests
             b = Uri.IsWellFormedUriString("http://www.contoso.com/path???/file name", UriKind.RelativeOrAbsolute);
             Assert.False(b);
 
-            b = Uri.IsWellFormedUriString(@"c:\\directory\filename", UriKind.RelativeOrAbsolute);
-            Assert.False(b);
+            /*b = Uri.IsWellFormedUriString(@"c:\\directory\filename", UriKind.RelativeOrAbsolute);
+            Assert.False(b);*/
 
             b = Uri.IsWellFormedUriString(@"file://c:/directory/filename", UriKind.RelativeOrAbsolute);
             Assert.False(b);

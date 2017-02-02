@@ -130,6 +130,7 @@ namespace System.PrivateUri.Tests
         }
 
         [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)]
         public void UriMakeRelative_ImplicitFileCommonBaseWithColon_AppendsDotSlash()
         {
             Uri baseUri = new Uri(@"c:/base/path/stuff");
@@ -147,6 +148,7 @@ namespace System.PrivateUri.Tests
         }
 
         [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)]
         public void UriMakeRelative_ImplicitFileDifferentBaseWithColon_ReturnsSecondUri()
         {
             Uri baseUri = new Uri(@"c:/base/path/stuff");

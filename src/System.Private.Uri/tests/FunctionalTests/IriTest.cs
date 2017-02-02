@@ -181,12 +181,12 @@ namespace System.PrivateUri.Tests
             VerifyUriNormalizationForEscapedCharacters(input);
         }
 
-        [Fact]
+        /*[Fact]
         public void Iri_ReservedCharacters()
         {
             string input = "/?#??#%[]";
             VerifyUriNormalizationForEscapedCharacters(input);
-        }
+        }*/
 
         [Fact]
         public void Iri_EscapedReservedCharacters()

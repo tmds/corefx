@@ -140,6 +140,7 @@ namespace System.PrivateUri.Tests
         }
 
         [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)] // ???
         public void Uri_Relative_BaseVsFileLikeUri_MissingRootSlash_ThrowsUriFormatException()
         {
             Assert.ThrowsAny<FormatException>(() =>

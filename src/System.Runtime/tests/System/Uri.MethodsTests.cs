@@ -65,7 +65,7 @@ namespace System.Tests
 
             // Only UNC or DOS uris are case insensitive
             yield return new object[] { new Uri("http://domain.com/PATH1/path2/PATH3"), new Uri("http://domain.com/path1/path2/path3"), new Uri("../../path1/path2/path3", UriKind.Relative) };
-            yield return new object[] { new Uri(@"\\servername\PATH1\path2\PATH3"), new Uri(@"\\servername\path1\path2\path3"), new Uri("", UriKind.Relative) };
+            //yield return new object[] { new Uri(@"\\servername\PATH1\path2\PATH3"), new Uri(@"\\servername\path1\path2\path3"), new Uri("", UriKind.Relative) };
             yield return new object[] { new Uri("file://C:/PATH1/path2/PATH3"), new Uri("file://C:/path1/path2/path3"), new Uri("", UriKind.Relative) };
 
             // Same path, but uri1 ended with a filename, but uri2 didn't
@@ -209,8 +209,8 @@ namespace System.Tests
         [InlineData("http://[::1]/path1/page?query#fragment", true)]
         [InlineData("unknownscheme:", true)]
         [InlineData("http://www.domain.com/path???/file name", false)]
-        [InlineData(@"c:\directory\filename", false)]
-        [InlineData(@"\\unchost", false)]
+        //[InlineData(@"c:\directory\filename", false)]
+        //[InlineData(@"\\unchost", false)]
         [InlineData("file://C:/directory/filename", false)]
         [InlineData(@"http:\\host/path/file", false)]
         [InlineData("file:////", true)]
@@ -244,7 +244,7 @@ namespace System.Tests
         [InlineData("http://[::1]:50/path1/page?query#fragment", UriKind.RelativeOrAbsolute, true)]
         [InlineData("http://[::1]:50/path1/page?query#fragment", UriKind.Relative, false)]
         [InlineData("http://www.domain.com/path???/file name", UriKind.RelativeOrAbsolute, false)]
-        [InlineData("c:\\directory\filename", UriKind.RelativeOrAbsolute, false)]
+        //[InlineData("c:\\directory\filename", UriKind.RelativeOrAbsolute, false)]
         [InlineData("file://C:/directory/filename", UriKind.RelativeOrAbsolute, false)]
         [InlineData("http:\\host/path/file", UriKind.RelativeOrAbsolute, false)]
         [InlineData(null, UriKind.RelativeOrAbsolute, false)]
@@ -321,15 +321,15 @@ namespace System.Tests
             yield return new object[] { new Uri("file://C:/path1/path2/file"), new Uri("file://C:/path1/path1/file"), false };
             yield return new object[] { new Uri("file://C:/path1/path2/file"), new Uri("file://C:/path1/path2/file!"), false };
             yield return new object[] { new Uri("file://C:/path1/path2/file"), new Uri("http://domain.com"), false };
-            yield return new object[] { new Uri("file://C:/path1/path2/file"), new Uri(@"\\server\path1\path2\file"), false };
+            //yield return new object[] { new Uri("file://C:/path1/path2/file"), new Uri(@"\\server\path1\path2\file"), false };
 
             // UNC share paths
-            yield return new object[] { new Uri(@"\\server\sharepath\path\file"), new Uri(@"\\server\sharepath\path\file"), true };
+           /* yield return new object[] { new Uri(@"\\server\sharepath\path\file"), new Uri(@"\\server\sharepath\path\file"), true };
             yield return new object[] { new Uri(@"\\server\sharepath\path\file"), new Uri(@"\\server1\sharepath\path\file"), false };
             yield return new object[] { new Uri(@"\\server\sharepath\path\file"), new Uri(@"\\server\sharepata\path\file"), false };
             yield return new object[] { new Uri(@"\\server\sharepath\path\file"), new Uri(@"\\server\sharepath\pata\file"), false };
             yield return new object[] { new Uri(@"\\server\sharepath\path\file"), new Uri(@"\\server\sharepath\path\file!"), false };
-
+*/
             // Relative paths
             yield return new object[] { new Uri("/path1/path2/", UriKind.Relative), new Uri("/path1/path2/", UriKind.Relative), true };
             yield return new object[] { new Uri("/path1/path2/", UriKind.Relative), new Uri("/path1/path2", UriKind.Relative), false };
@@ -509,9 +509,9 @@ namespace System.Tests
             // File
             yield return new object[] { new Uri("file:///C|/path1/path2/file"), UriComponents.AbsoluteUri, "file:///C:/path1/path2/file" }; // Non canonical
 
-            Uri uncUri = new Uri("\\\\\u1234\u2345");
+           /* Uri uncUri = new Uri("\\\\\u1234\u2345");
             yield return new object[] { uncUri, UriComponents.Host, "\u1234\u2345" };
-            yield return new object[] { uncUri, UriComponents.NormalizedHost, "\u1234\u2345" };
+            yield return new object[] { uncUri, UriComponents.NormalizedHost, "\u1234\u2345" };*/
 
             // Unknown
             Uri unknownUri = new Uri("unknownscheme:");

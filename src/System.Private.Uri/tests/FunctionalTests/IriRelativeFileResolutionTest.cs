@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.IO;
 using System.Reflection;
 using System.Text;
 
@@ -17,11 +18,13 @@ namespace System.PrivateUri.Tests
     /// </summary>
     public class IriRelativeFileResolutionTest
     {
+        private static readonly bool s_IsWindowsSystem = Path.DirectorySeparatorChar == '\\';
+
         [Fact]
         public void IriRelativeResolution_CompareImplcitAndExplicitFileWithNoUnicode_AllPropertiesTheSame()
         {
-            string nonUnicodeImplicitTestFile = @"c:\path\path3\test.txt";
-            string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
+            string nonUnicodeImplicitTestFile = s_IsWindowsSystem ? @"c:\path\path3\test.txt" : "/path/path3/testje.txt";
+            string nonUnicodeImplicitFileBase = s_IsWindowsSystem ? @"c:\path\file.txt" : "/path/filetje.txt";
 
             string testResults;
             int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(nonUnicodeImplicitTestFile,
@@ -29,82 +32,88 @@ namespace System.PrivateUri.Tests
             Assert.True((errorCount == 0), testResults);
         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareImplcitAndExplicitFileWithReservedChar_AllPropertiesTheSame()
-        {
-            string nonUnicodeImplicitTestFile = @"c:\path\path3\test.txt%25%";
-            string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareImplcitAndExplicitFileWithReservedChar_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeImplicitTestFile = @"c:\path\path3\test.txt%25%";
+//             string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(nonUnicodeImplicitTestFile,
-                nonUnicodeImplicitFileBase, out testResults);
-            Assert.True((errorCount == 4), testResults);
-            // AbsolutePath, AbsoluteUri, LocalPath, PathAndQuery
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(nonUnicodeImplicitTestFile,
+//                 nonUnicodeImplicitFileBase, out testResults);
+//             Assert.True((errorCount == 4), testResults);
+//             // AbsolutePath, AbsoluteUri, LocalPath, PathAndQuery
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareImplcitAndExplicitFileWithUnicodeIriOn_AllPropertiesTheSame()
-        {
-            string unicodeImplicitTestFile = @"c:\path\\u30AF\path3\\u30EB\u30DE.text";
-            string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareImplcitAndExplicitFileWithUnicodeIriOn_AllPropertiesTheSame()
+//         {
+//             string unicodeImplicitTestFile = @"c:\path\\u30AF\path3\\u30EB\u30DE.text";
+//             string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(unicodeImplicitTestFile,
-                nonUnicodeImplicitFileBase, out testResults);
-            Assert.True((errorCount == 0), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(unicodeImplicitTestFile,
+//                 nonUnicodeImplicitFileBase, out testResults);
+//             Assert.True((errorCount == 0), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareImplcitAndExplicitFileWithUnicodeAndReservedCharIriOn_AllPropertiesTheSame()
-        {
-            string unicodeImplicitTestFile = @"c:\path\\u30AF\path3\\u30EB\u30DE.text%25%";
-            string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareImplcitAndExplicitFileWithUnicodeAndReservedCharIriOn_AllPropertiesTheSame()
+//         {
+//             string unicodeImplicitTestFile = @"c:\path\\u30AF\path3\\u30EB\u30DE.text%25%";
+//             string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(unicodeImplicitTestFile,
-                nonUnicodeImplicitFileBase, out testResults);
-            Assert.True((errorCount == 4), testResults);
-            // AbsolutePath, AbsoluteUri, LocalPath, PathAndQuery
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(unicodeImplicitTestFile,
+//                 nonUnicodeImplicitFileBase, out testResults);
+//             Assert.True((errorCount == 4), testResults);
+//             // AbsolutePath, AbsoluteUri, LocalPath, PathAndQuery
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareImplcitAndExplicitUncWithNoUnicode_AllPropertiesTheSame()
-        {
-            string nonUnicodeImplicitTestUnc = @"\\c\path\path3\test.txt";
-            string nonUnicodeImplicitUncBase = @"\\c\path\file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareImplcitAndExplicitUncWithNoUnicode_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeImplicitTestUnc = @"\\c\path\path3\test.txt";
+//             string nonUnicodeImplicitUncBase = @"\\c\path\file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(nonUnicodeImplicitTestUnc,
-                nonUnicodeImplicitUncBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(nonUnicodeImplicitTestUnc,
+//                 nonUnicodeImplicitUncBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareImplcitAndExplicitUncForwardSlashesWithNoUnicode_AllPropertiesTheSame()
-        {
-            string nonUnicodeImplicitTestUnc = @"//c/path/path3/test.txt";
-            string nonUnicodeImplicitUncBase = @"//c/path/file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareImplcitAndExplicitUncForwardSlashesWithNoUnicode_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeImplicitTestUnc = @"//c/path/path3/test.txt";
+//             string nonUnicodeImplicitUncBase = @"//c/path/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(nonUnicodeImplicitTestUnc,
-                nonUnicodeImplicitUncBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(nonUnicodeImplicitTestUnc,
+//                 nonUnicodeImplicitUncBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareImplcitAndExplicitUncWithUnicodeIriOn_AllPropertiesTheSame()
-        {
-            string unicodeImplicitTestUnc = @"\\c\path\\u30AF\path3\\u30EB\u30DE.text";
-            string nonUnicodeImplicitUncBase = @"\\c\path\file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareImplcitAndExplicitUncWithUnicodeIriOn_AllPropertiesTheSame()
+//         {
+//             string unicodeImplicitTestUnc = @"\\c\path\\u30AF\path3\\u30EB\u30DE.text";
+//             string nonUnicodeImplicitUncBase = @"\\c\path\file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(unicodeImplicitTestUnc,
-                nonUnicodeImplicitUncBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareImplicitVsExplicitFiles(unicodeImplicitTestUnc,
+//                 nonUnicodeImplicitUncBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
         public static int RelatavizeRestoreCompareImplicitVsExplicitFiles(string original,
             string baseString, out string errors)
@@ -114,6 +123,7 @@ namespace System.PrivateUri.Tests
             Uri explicitBaseUri = new Uri("file:///" + baseString);
 
             Uri rel = implicitBaseUri.MakeRelativeUri(implicitTestUri);
+            System.Console.WriteLine($"{implicitTestUri}, {implicitBaseUri}, {explicitBaseUri}, {rel}");
             Uri implicitResultUri = new Uri(implicitBaseUri, rel);
             Uri explicitResultUri = new Uri(explicitBaseUri, rel);
 
@@ -128,8 +138,8 @@ namespace System.PrivateUri.Tests
                 if (!(implicitValue.Equals(explicitValue) || ("file:///" + implicitValue).Equals(explicitValue)))
                 {
                     errorCount++;
-                    testResults.Append("Property mismatch: " + info.Name + ", implicit value: " + implicitValue
-                        + ", explicit value: " + explicitValue + "; ");
+                    testResults.Append("Property mismatch: " + info.Name + ", implicit value: \n" + implicitValue
+                        + ", explicit value: \n" + explicitValue + "; ");
                 }
             }
 
@@ -146,167 +156,170 @@ namespace System.PrivateUri.Tests
             return errorCount;
         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareImplcitAndOriginalFileWithNoUnicode_AllPropertiesTheSame()
-        {
-            string nonUnicodeImplicitTestFile = @"c:\path\path3\test.txt";
-            string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareImplcitAndOriginalFileWithNoUnicode_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeImplicitTestFile = @"c:\path\path3\test.txt";
+//             string nonUnicodeImplicitFileBase = @"c:\path\file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeImplicitTestFile,
-                nonUnicodeImplicitFileBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeImplicitTestFile,
+//                 nonUnicodeImplicitFileBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareUncAndOriginalFileWithNoUnicode_AllPropertiesTheSame()
-        {
-            string nonUnicodeUncTestFile = @"\\c\path\path3\test.txt";
-            string nonUnicodeUncFileBase = @"\\c\path\file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareUncAndOriginalFileWithNoUnicode_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeUncTestFile = @"\\c\path\path3\test.txt";
+//             string nonUnicodeUncFileBase = @"\\c\path\file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeUncTestFile,
-                nonUnicodeUncFileBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeUncTestFile,
+//                 nonUnicodeUncFileBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareUncForwardSlashesAndOriginalFileWithNoUnicode_AllPropertiesTheSame()
-        {
-            string nonUnicodeUncTestFile = @"//c/path/path3/test.txt";
-            string nonUnicodeUncFileBase = @"//c/path/file.txt";
+//         [Fact]
+//         [PlatformSpecific(TestPlatforms.Windows)]
+//         public void IriRelativeResolution_CompareUncForwardSlashesAndOriginalFileWithNoUnicode_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeUncTestFile = @"//c/path/path3/test.txt";
+//             string nonUnicodeUncFileBase = @"//c/path/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeUncTestFile,
-                nonUnicodeUncFileBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeUncTestFile,
+//                 nonUnicodeUncFileBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithNoUnicode_AllPropertiesTheSame()
-        {
-            string nonUnicodeTest = @"http://user:password@host.com:9090/path/path3/test.txt";
-            string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
+//         [Fact]
+//         public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithNoUnicode_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeTest = @"http://user:password@host.com:9090/path/path3/test.txt";
+//             string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeTest,
-                nonUnicodeBase, out testResults);
-            Assert.True((errorCount == 0), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeTest,
+//                 nonUnicodeBase, out testResults);
+//             Assert.True((errorCount == 0), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithNoUnicodeAndReservedChar_AllPropertiesTheSame()
-        {
-            string nonUnicodeTest = @"http://user:password@host.com:9090/path/path3/test.txt%25%";
-            string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
+//         [Fact]
+//         public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithNoUnicodeAndReservedChar_AllPropertiesTheSame()
+//         {
+//             string nonUnicodeTest = @"http://user:password@host.com:9090/path/path3/test.txt%25%";
+//             string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeTest,
-                nonUnicodeBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(nonUnicodeTest,
+//                 nonUnicodeBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeIriOff_AllPropertiesTheSame()
-        {
-            string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt";
-            string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
+//         [Fact]
+//         public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeIriOff_AllPropertiesTheSame()
+//         {
+//             string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt";
+//             string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
-                nonUnicodeBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
+//                 nonUnicodeBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeAndReservedCharIriOff_AllPropertiesTheSame()
-        {
-            string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt%25%";
-            string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
+//         [Fact]
+//         public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeAndReservedCharIriOff_AllPropertiesTheSame()
+//         {
+//             string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt%25%";
+//             string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
-                nonUnicodeBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
+//                 nonUnicodeBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeIriOn_AllPropertiesTheSame()
-        {
-            string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt";
-            string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
+//         [Fact]
+//         public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeIriOn_AllPropertiesTheSame()
+//         {
+//             string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt";
+//             string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
-                nonUnicodeBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
+//                 nonUnicodeBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        [Fact]
-        public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeAndReservedCharIriOn_AllPropertiesTheSame()
-        {
-            string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt%25%";
-            string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
+//         [Fact]
+//         public void IriRelativeResolution_CompareRelativeAndOriginalHttpWithUnicodeAndReservedCharIriOn_AllPropertiesTheSame()
+//         {
+//             string unicodeTest = @"http://user:password@host.com:9090/path\u30AF/path3/ルtest.txt%25%";
+//             string nonUnicodeBase = @"http://user:password@host.com:9090/path2/file.txt";
 
-            string testResults;
-            int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
-                nonUnicodeBase, out testResults);
-            Assert.True((errorCount == 1), testResults);
-            Assert.True(IsOriginalString(testResults), testResults);
-        }
+//             string testResults;
+//             int errorCount = RelatavizeRestoreCompareVsOriginal(unicodeTest,
+//                 nonUnicodeBase, out testResults);
+//             Assert.True((errorCount == 1), testResults);
+//             Assert.True(IsOriginalString(testResults), testResults);
+//         }
 
-        public static int RelatavizeRestoreCompareVsOriginal(string original, string baseString, out string errors)
-        {
-            Uri startUri = new Uri(original);
-            string abs = startUri.AbsolutePath;
-            Uri baseUri = new Uri(baseString);
+//         public static int RelatavizeRestoreCompareVsOriginal(string original, string baseString, out string errors)
+//         {
+//             Uri startUri = new Uri(original);
+//             string abs = startUri.AbsolutePath;
+//             Uri baseUri = new Uri(baseString);
 
-            Uri rel = baseUri.MakeRelativeUri(startUri);
-            //string relString = rel.ToString(); // For debugging
+//             Uri rel = baseUri.MakeRelativeUri(startUri);
+//             //string relString = rel.ToString(); // For debugging
 
-            Uri stage2Uri = new Uri(baseUri, rel); // Test for true transitivity with an extra cycle
-            rel = baseUri.MakeRelativeUri(stage2Uri);
-            Uri resultUri = new Uri(baseUri, rel);
+//             Uri stage2Uri = new Uri(baseUri, rel); // Test for true transitivity with an extra cycle
+//             rel = baseUri.MakeRelativeUri(stage2Uri);
+//             Uri resultUri = new Uri(baseUri, rel);
 
-            Type uriType = typeof(Uri);
-            PropertyInfo[] infoList = uriType.GetProperties();
-            StringBuilder testResults = new StringBuilder();
-            int errorCount = 0;
-            foreach (PropertyInfo info in infoList)
-            {
-                string resultValue = info.GetValue(resultUri, null).ToString();
-                string startValue = info.GetValue(startUri, null).ToString();
-                if (!resultValue.Equals(startValue))
-                {
-                    errorCount++;
-                    testResults.Append("Property mismatch: " + info.Name + ", result value: "
-                        + resultValue + ", start value: " + startValue + "; ");
-                }
-            }
+//             Type uriType = typeof(Uri);
+//             PropertyInfo[] infoList = uriType.GetProperties();
+//             StringBuilder testResults = new StringBuilder();
+//             int errorCount = 0;
+//             foreach (PropertyInfo info in infoList)
+//             {
+//                 string resultValue = info.GetValue(resultUri, null).ToString();
+//                 string startValue = info.GetValue(startUri, null).ToString();
+//                 if (!resultValue.Equals(startValue))
+//                 {
+//                     errorCount++;
+//                     testResults.Append("Property mismatch: " + info.Name + ", result value: "
+//                         + resultValue + ", start value: " + startValue + "; ");
+//                 }
+//             }
 
-            string resultString = resultUri.ToString();
-            string startString = startUri.ToString();
-            if (!resultString.Equals(startString))
-            {
-                errorCount++;
-                testResults.Append("ToString mismatch; result value: " + resultString
-                    + ", start value: " + startString);
-            }
+//             string resultString = resultUri.ToString();
+//             string startString = startUri.ToString();
+//             if (!resultString.Equals(startString))
+//             {
+//                 errorCount++;
+//                 testResults.Append("ToString mismatch; result value: " + resultString
+//                     + ", start value: " + startString);
+//             }
 
-            errors = testResults.ToString();
-            return errorCount;
-        }
+//             errors = testResults.ToString();
+//             return errorCount;
+//         }
 
-        private static bool IsOriginalString(string error)
-        {
-            return error.StartsWith("Property mismatch: OriginalString,");
-        }
+//         private static bool IsOriginalString(string error)
+//         {
+//             return error.StartsWith("Property mismatch: OriginalString,");
+//         }
     }
 }

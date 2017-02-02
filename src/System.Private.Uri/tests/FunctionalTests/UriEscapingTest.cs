@@ -467,6 +467,7 @@ namespace System.PrivateUri.Tests
         }
 
         [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)]
         public void UriFile_ImplicitDosFile_QueryNotAllowed()
         {
             string input = "c:/path/path?query";
@@ -479,6 +480,7 @@ namespace System.PrivateUri.Tests
         }
 
         [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)]
         public void UriFile_ImplicitUncFile_QueryNotAllowed()
         {
             string input = @"\\Server\share\path?query";
@@ -491,6 +493,7 @@ namespace System.PrivateUri.Tests
         }
 
         [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)]
         public void UriFile_ImplicitDosFile_FragmentNotAllowed()
         {
             string input = "c:/path/path#fragment#";
@@ -503,6 +506,7 @@ namespace System.PrivateUri.Tests
         }
 
         [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)]
         public void UriFile_ImplicitUncFile_FragmentNotAllowed()
         {
             string input = @"\\Server\share\path#fragment#";
