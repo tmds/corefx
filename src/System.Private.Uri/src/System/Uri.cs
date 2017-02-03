@@ -102,7 +102,7 @@ namespace System
                                                     // and Host values in case of a custom user Parser
             DosPath = 0x08000000,
             UncPath = 0x10000000,
-            //UnixPath = 0x20000,
+            UnixPath = 0x100000000000,
             ImplicitFile = 0x20000000,
             MinimalUriInfoSet = 0x40000000,
             AllUriInfoSet = unchecked(0x80000000),
@@ -176,6 +176,11 @@ namespace System
         private bool IsUncPath
         {
             get { return (_flags & Flags.UncPath) != 0; }
+        }
+
+        private bool IsUnixPath
+        {
+            get { return (_flags & Flags.UnixPath) != 0; }
         }
 
         private Flags HostType
@@ -2065,8 +2070,8 @@ namespace System
                         {
                             _flags |= Flags.AuthorityFound;
                         }
-                        // DOS-like path?
-                        if (i + 1 < (ushort)length && ((c = pUriString[i + 1]) == ':' || c == '|') &&
+                        //Windows: Dos path?
+                        if (IsWindowsSystem && i + 1 < (ushort)length && ((c = pUriString[i + 1]) == ':' || c == '|') &&
                             UriHelper.IsAsciiLetter(pUriString[i]))
                         {
                             if (i + 2 >= (ushort)length || ((c = pUriString[i + 2]) != '\\' && c != '/'))
@@ -2096,20 +2101,33 @@ namespace System
                                 }
                             }
                         }
-                        else if (_syntax.InFact(UriSyntaxFlags.FileLikeUri) && (i - idx >= 2 && i - idx != 3 &&
-                            i < length && pUriString[i] != '?' && pUriString[i] != '#'))
+                        //Unix: Unix path?
+                        else if (!IsWindowsSystem && _syntax.InFact(UriSyntaxFlags.FileLikeUri) && (i - idx >= 2))
+                        {
+                            idx += 2;
+                            _flags |= Flags.UnixPath;
+                        }
+                        //Windows: UNC path?
+                        else if (IsWindowsSystem && _syntax.InFact(UriSyntaxFlags.FileLikeUri) && (i - idx >= 2 && i - idx != 3 &&
+                                                                                i < length && pUriString[i] != '?' &&
+                                                                                pUriString[i] != '#'))
                         {
                             // V1.0 did not support file:///, fixing it with minimal behavior change impact
                             // Only FILE scheme may have UNC Path flag set
                             _flags |= Flags.UncPath;
                             idx = i;
+                            // TODO: ...
                         }
+                        /*if (IsWindowsSystem)
+                        {
+                            
+                        }*/
                     }
                 }
                 //
                 //STEP 1.5 decide on the Authority component
                 //
-                if ((_flags & (Flags.UncPath | Flags.DosPath & Flags.ImplicitFile)) != 0)
+                if ((_flags & (Flags.UncPath | Flags.DosPath | Flags.UnixPath)) != 0)
                 {
                 }
                 else if ((idx + 2) <= length)
@@ -3682,7 +3700,7 @@ namespace System
                 //Unix: Unix path?
                 else if (!IsWindowsSystem && uriString[idx] == '/')
                 {
-                    flags |= (/*Flags.UnixPath |*/ Flags.ImplicitFile | Flags.AuthorityFound);
+                    flags |= (Flags.UnixPath | Flags.ImplicitFile | Flags.AuthorityFound);
                     syntax = UriParser.FileUri;
                     return idx;
                 }
@@ -4026,7 +4044,8 @@ namespace System
                 if (syntax.InFact(UriSyntaxFlags.AllowEmptyHost))
                 {
                     flags &= ~Flags.UncPath;    //UNC cannot have an empty hostname
-                    if (StaticInFact(flags, Flags.ImplicitFile))
+                    if (StaticInFact(flags, Flags.ImplicitFile)
+                        && !StaticInFact(flags, Flags.UnixPath))
                         err = ParsingError.BadHostName;
                     else
                         flags |= Flags.BasicHostType;
@@ -5255,6 +5274,10 @@ namespace System
                         // The FILE DOS path comes as /c:/path, we have to exclude first 3 chars from compression
                         path = Compress(path, 3, ref length, basePart.Syntax);
                         return new string(path, 1, length - 1) + extra;
+                    }
+                    else if (basePart.IsUnixPath)
+                    {
+                        left = basePart.GetParts(UriComponents.Host, UriFormat.Unescaped);
                     }
                     else
                     {
