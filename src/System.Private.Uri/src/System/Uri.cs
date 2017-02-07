@@ -2028,7 +2028,6 @@ namespace System
             _flags &= ~(Flags.IndexMask | Flags.UserDrivenParsing);
 
             //STEP2: Parse up to the port
-            //System.Console.WriteLine($"PrivateParseMinimal {_originalUnicodeString} {_string}");
 
             fixed (char* pUriString = ((_iriParsing &&
                                         ((_flags & Flags.HasUnicode) != 0) &&
@@ -2109,19 +2108,13 @@ namespace System
                         }
                         //Windows: UNC path?
                         else if (IsWindowsSystem && _syntax.InFact(UriSyntaxFlags.FileLikeUri) && (i - idx >= 2 && i - idx != 3 &&
-                                                                                i < length && pUriString[i] != '?' &&
-                                                                                pUriString[i] != '#'))
+                            i < length && pUriString[i] != '?' && pUriString[i] != '#'))
                         {
                             // V1.0 did not support file:///, fixing it with minimal behavior change impact
                             // Only FILE scheme may have UNC Path flag set
                             _flags |= Flags.UncPath;
                             idx = i;
-                            // TODO: ...
                         }
-                        /*if (IsWindowsSystem)
-                        {
-                            
-                        }*/
                     }
                 }
                 //
@@ -3668,8 +3661,8 @@ namespace System
                 }
             }
 
-            //NB: A string must have at least 3 characters and at least 1 before ':'
-            if (idx + 2 >= length || end == idx)
+            //NB: A string must have at least 1 characters and at least 1 before ':'
+            if (idx == length || end == idx)
             {
                 err = ParsingError.BadFormat;
                 return 0;
@@ -3679,11 +3672,13 @@ namespace System
             //NB: A string may not have ':' if this is a UNC path
             {
                 char c;
-                if ((c = uriString[idx + 1]) == ':' || c == '|')
+                if ((idx + 2 < length) && ((c = uriString[idx + 1]) == ':' || c == '|'))
                 {
                     //Windows: DOS-like path?
-                    if (IsWindowsSystem && UriHelper.IsAsciiLetter(uriString[idx])) {
-                        if ((c = uriString[idx + 2]) == '\\' || c == '/') {
+                    if (IsWindowsSystem && UriHelper.IsAsciiLetter(uriString[idx]))
+                    {
+                        if ((c = uriString[idx + 2]) == '\\' || c == '/')
+                        {
                             flags |= (Flags.DosPath | Flags.ImplicitFile | Flags.AuthorityFound);
                             syntax = UriParser.FileUri;
                             return idx;
@@ -3701,10 +3696,10 @@ namespace System
                 else if (!IsWindowsSystem && uriString[idx] == '/')
                 {
                     flags |= (Flags.UnixPath | Flags.ImplicitFile | Flags.AuthorityFound);
-                    syntax = UriParser.FileUri;
+                    syntax = UriParser.UnixFileUri;
                     return idx;
                 }
-                else if ((c = uriString[idx]) == '/' || c == '\\')
+                else if ((idx + 1 < length) && ((c = uriString[idx]) == '/' || c == '\\'))
                 {
                     //Windows: UNC share?
                     if (IsWindowsSystem && ((c = uriString[idx + 1]) == '\\' || c == '/')) {

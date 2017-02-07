@@ -29,10 +29,6 @@ namespace System
                 _flags |= Flags.UserEscaped;
 
             ParsingError err = ParseScheme(_string, ref _flags, ref _syntax);
-            if (err != ParsingError.None && err != ParsingError.SizeLimit)
-            {
-                System.Console.WriteLine($"Error parsing {uri}: {err}");
-            }
             UriFormatException e;
 
             InitializeUri(err, uriKind, out e);
@@ -51,10 +47,9 @@ namespace System
                     // uriKind != Absolute
                     if (NotAny(Flags.DosPath) &&
                         uriKind != UriKind.Absolute &&
-                       (uriKind == UriKind.Relative || (_string.Length >= 2 && (_string[0] != '\\' || _string[1] != '\\'))))
-
+                       ((uriKind == UriKind.Relative || (_string.Length >= 2 && (_string[0] != '\\' || _string[1] != '\\')))
+                        || InFact(Flags.UnixPath)))
                     {
-                        System.Console.WriteLine("--> Making relative");
                         _syntax = null; //make it be relative Uri
                         _flags &= Flags.UserEscaped; // the only flag that makes sense for a relative uri
                         e = null;
@@ -111,10 +106,7 @@ namespace System
                             return;
                         }
                         else
-                        {
-                            System.Console.WriteLine("PrivateParseMinimal failed");
                             e = GetException(err);
-                        }
                     }
                     else if (uriKind == UriKind.Relative)
                     {
