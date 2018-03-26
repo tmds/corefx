@@ -837,7 +837,7 @@ namespace System.Net.Sockets
 
                 // We just transitioned from Waiting to Processing.
                 // Spawn a work item to do the actual processing.
-                ThreadPool.QueueUserWorkItem(s_processingCallback, context);
+                ProcessQueue(context);
             }
 
             // Called on the threadpool when data may be available.
@@ -864,10 +864,9 @@ namespace System.Net.Sockets
                     }
                 }
 
-                bool needCallback = false;
-                AsyncOperation nextOp;
-                while (true)
+                while (op != null)
                 {
+                    bool needCallback = false;
                     bool wasCompleted = false;
 
                     // Try to change the op state to Running.  
@@ -888,7 +887,7 @@ namespace System.Net.Sockets
                         }
                     }
 
-                    nextOp = null;
+                    AsyncOperation nextOp = null;
                     if (wasCompleted || !isRunning)
                     {
                         // Remove the op from the queue and see if there's more to process.
@@ -953,32 +952,12 @@ namespace System.Net.Sockets
                         }
                     }
 
-                    if (needCallback || nextOp == null)
+                    if (needCallback)
                     {
-                        break;
+                        ThreadPool.QueueUserWorkItem(o => ((AsyncOperation)o).InvokeCallback(allowPooling: false), op);
                     }
 
                     op = nextOp;
-                }
-
-                if (needCallback)
-                {
-                    if (nextOp != null)
-                    {
-                        Debug.Assert(_state == QueueState.Processing);
-
-                        // Spawn a new work item to continue processing the queue.
-                        ThreadPool.QueueUserWorkItem(s_processingCallback, context);
-                    }
-
-                    // At this point, the operation has completed and it's no longer
-                    // in the queue / no one else has a reference to it.  We can invoke
-                    // the callback and let it pool the object if appropriate.
-                    op.InvokeCallback(allowPooling: true);
-                }
-                else
-                {
-                    Debug.Assert(nextOp == null);
                 }
             }
 
