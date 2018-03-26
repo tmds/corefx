@@ -57,12 +57,8 @@ namespace System.Net.Sockets
 
         // In debug builds, force there to be 2 engines. In release builds, use half the number of processors when
         // there are at least 6. The lower bound is to avoid using multiple engines on systems which aren't servers.
-        private static readonly int EngineCount =
-#if DEBUG
-            2;
-#else
-            Environment.ProcessorCount >= 6 ? Environment.ProcessorCount / 2 : 1;
-#endif
+        private static readonly int EngineCount = 1;
+
         //
         // The current engines. We replace an engine when it runs out of "handle" values.
         // Must be accessed under s_lock.
