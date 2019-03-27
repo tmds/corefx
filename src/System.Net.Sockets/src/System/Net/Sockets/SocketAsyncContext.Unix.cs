@@ -270,12 +270,16 @@ namespace System.Net.Sockets
                 else
                 {
                     // Async operation.  Process the IO on the threadpool.
-                    ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
+                    // ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
+                    ProcessAsyncOperation();
                 }
             }
 
+            protected abstract void ProcessAsyncOperation();
+
             void IThreadPoolWorkItem.Execute()
             {
+                InvokeCallback(allowPooling: true);
                 // ReadOperation and WriteOperation, the only two types derived from
                 // AsyncOperation, implement IThreadPoolWorkItem.Execute to call
                 // ProcessAsyncOperation(this) on the appropriate receive or send queue.
@@ -288,8 +292,8 @@ namespace System.Net.Sockets
                 // "Execute" as a public method, which could easily be misunderstood.
                 // We could also add an abstract method that the base interface implementation
                 // invokes, but that adds an extra virtual dispatch.
-                Debug.Fail("Expected derived type to implement IThreadPoolWorkItem");
-                throw new InvalidOperationException();
+                // Debug.Fail("Expected derived type to implement IThreadPoolWorkItem");
+                // throw new InvalidOperationException();
             }
 
             // Called when op is not in the queue yet, so can't be otherwise executing
@@ -324,14 +328,14 @@ namespace System.Net.Sockets
         {
             public ReadOperation(SocketAsyncContext context) : base(context) { }
 
-            void IThreadPoolWorkItem.Execute() => AssociatedContext.ProcessAsyncReadOperation(this);
+            protected override void ProcessAsyncOperation() => AssociatedContext.ProcessAsyncReadOperation(this);
         }
 
         private abstract class WriteOperation : AsyncOperation, IThreadPoolWorkItem
         {
             public WriteOperation(SocketAsyncContext context) : base(context) { }
 
-            void IThreadPoolWorkItem.Execute() => AssociatedContext.ProcessAsyncWriteOperation(this);
+            protected override void ProcessAsyncOperation() => AssociatedContext.ProcessAsyncWriteOperation(this);
         }
 
         private abstract class SendOperation : WriteOperation
@@ -867,7 +871,7 @@ namespace System.Net.Sockets
                     // At this point, the operation has completed and it's no longer
                     // in the queue / no one else has a reference to it.  We can invoke
                     // the callback and let it pool the object if appropriate.
-                    op.InvokeCallback(allowPooling: true);
+                    ThreadPool.UnsafeQueueUserWorkItem(op, preferLocal: false);
                 }
             }
 
