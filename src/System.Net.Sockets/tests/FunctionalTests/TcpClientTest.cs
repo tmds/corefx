@@ -444,6 +444,45 @@ namespace System.Net.Sockets.Tests
             }
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Dispose_DuringConnectGetsDisposed(bool connectByName)
+        {
+            for (int i = 0; i < 20; i++) // run multiple times to attempt to force various interleavings
+            {
+                using (var server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                {
+                    // Set up a server socket to which to connect
+                    server.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                    server.Listen(1);
+                    var endpoint = (IPEndPoint)server.LocalEndPoint;
+
+                    // Connect synchronously...
+                    var client = new TcpClient();
+                    Task connectTask = Task.Run(() =>
+                        {
+                            if (connectByName)
+                                client.Connect("localhost", endpoint.Port);
+                            else
+                                client.Connect(endpoint.Address, endpoint.Port);
+                        });
+                    await Task.Run(() => client.Dispose());
+
+                    // There is a race condition here.  If the connection succeeds before the
+                    // disposal, then the task will complete successfully.  Otherwise, it should
+                    // fail with an ObjectDisposedException.
+                    try
+                    {
+                        await connectTask;
+                    }
+                    catch (ObjectDisposedException) { }
+
+                    Assert.Null(client.Client); // should be nulled out after Dispose
+                }
+            }
+        }
+
         [Fact]
         public void Connect_Dual_Success()
         {
