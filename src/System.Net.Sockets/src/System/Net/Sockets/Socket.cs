@@ -4490,7 +4490,7 @@ namespace System.Net.Sockets
                 {
                     // Abortive.
                     if (NetEventSource.IsEnabled) NetEventSource.Info(this, "Calling _handle.Dispose()");
-                    _handle.Dispose();
+                    _handle.CloseAsIs(abortive: true);
                 }
                 else
                 {
@@ -4526,7 +4526,7 @@ namespace System.Net.Sockets
 
                         if (errorCode != SocketError.Success)
                         {
-                            _handle.Dispose();
+                            _handle.CloseAsIs(abortive: true);
                         }
                         else
                         {
@@ -4537,7 +4537,7 @@ namespace System.Net.Sockets
                             if (errorCode != (SocketError)0)
                             {
                                 // We got a timeout - abort.
-                                _handle.Dispose();
+                                _handle.CloseAsIs(abortive: true);
                             }
                             else
                             {
@@ -4549,7 +4549,7 @@ namespace System.Net.Sockets
                                 if (errorCode != SocketError.Success || dataAvailable != 0)
                                 {
                                     // If we have data or don't know, safest thing is to reset.
-                                    _handle.Dispose();
+                                    _handle.CloseAsIs(abortive: true);
                                 }
                                 else
                                 {

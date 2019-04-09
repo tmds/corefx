@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -200,6 +201,33 @@ namespace System.Net.Sockets
             if (_asyncContext != null)
             {
                 _asyncContext.Close();
+            }
+        }
+
+        private static unsafe void UnblockSocket(bool abortive, InnerSafeCloseSocket handle)
+        {
+            // Calling 'close' on a socket that has pending blocking calls (e.g. recv, send, accept, ...)
+            // may block indefinitly. This is a best effort attempt to not get blocked and make those operations return.
+            // We need to ensure we keep the expected TCP behavior that is observed by the socket peer (FIN vs RST close).
+            var linger = new Interop.Sys.LingerOption();
+            if (abortive ||
+                (Interop.Sys.GetLingerOption(handle, &linger) == Interop.Error.SUCCESS && linger.OnOff != 0))
+            {
+                if (abortive || linger.Seconds == 0)
+                {
+                    // Connect to AF_UNSPEC causes an abortive close (RST).
+                    Span<byte> address = stackalloc byte[32];
+                    SocketAddressPal.SetAddressFamily(address, AddressFamily.Unspecified);
+                    fixed (byte* pAddress = address)
+                    {
+                        Interop.Sys.Connect(handle, pAddress, address.Length);
+                    }
+                }
+            }
+            else
+            {
+                // This causes a regular close (FIN).
+                Interop.Sys.Shutdown(handle, SocketShutdown.Both);
             }
         }
 

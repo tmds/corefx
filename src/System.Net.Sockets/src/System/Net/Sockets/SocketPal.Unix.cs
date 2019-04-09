@@ -84,11 +84,10 @@ namespace System.Net.Sockets
                 };
 
                 errno = Interop.Sys.ReceiveMessage(
-                    socket.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                    socket,
                     &messageHeader,
                     flags,
                     &received);
-                GC.KeepAlive(socket); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
                 receivedFlags = messageHeader.Flags;
                 sockAddrLen = messageHeader.SocketAddressLen;
@@ -125,11 +124,10 @@ namespace System.Net.Sockets
 
                 long bytesSent = 0;
                 errno = Interop.Sys.SendMessage(
-                    socket.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                    socket,
                     &messageHeader,
                     flags,
                     &bytesSent);
-                GC.KeepAlive(socket); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
                 sent = checked((int)bytesSent);
             }
@@ -188,11 +186,10 @@ namespace System.Net.Sockets
 
                     long bytesSent = 0;
                     errno = Interop.Sys.SendMessage(
-                        socket.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                        socket,
                         &messageHeader,
                         flags,
                         &bytesSent);
-                    GC.KeepAlive(socket); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
                     sent = checked((int)bytesSent);
                 }
@@ -311,11 +308,10 @@ namespace System.Net.Sockets
                     };
 
                     errno = Interop.Sys.ReceiveMessage(
-                        socket.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                        socket,
                         &messageHeader,
                         flags,
                         &received);
-                    GC.KeepAlive(socket); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
                     receivedFlags = messageHeader.Flags;
                     sockAddrLen = messageHeader.SocketAddressLen;
@@ -372,11 +368,10 @@ namespace System.Net.Sockets
                 };
 
                 errno = Interop.Sys.ReceiveMessage(
-                    socket.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                    socket,
                     &messageHeader,
                     flags,
                     &received);
-                GC.KeepAlive(socket); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
                 receivedFlags = messageHeader.Flags;
                 sockAddrLen = messageHeader.SocketAddressLen;
@@ -435,11 +430,10 @@ namespace System.Net.Sockets
 
                     long received = 0;
                     errno = Interop.Sys.ReceiveMessage(
-                        socket.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                        socket,
                         &messageHeader,
                         flags,
                         &received);
-                    GC.KeepAlive(socket); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
                     receivedFlags = messageHeader.Flags;
                     int sockAddrLen = messageHeader.SocketAddressLen;

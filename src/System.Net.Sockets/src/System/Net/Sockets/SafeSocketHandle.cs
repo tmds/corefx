@@ -157,7 +157,7 @@ namespace System.Net.Sockets
             return true;
         }
 
-        internal void CloseAsIs()
+        internal void CloseAsIs(bool abortive = false)
         {
             if (NetEventSource.IsEnabled) NetEventSource.Info(this, $"_innerSocket={_innerSocket}");
 
@@ -175,13 +175,21 @@ namespace System.Net.Sockets
                     SpinWait sw = new SpinWait();
                     while (!_released)
                     {
+                        UnblockSocket(abortive, innerSocket);
                         sw.SpinOnce();
                     }
 
                     InnerReleaseHandle();
 
-                    // Now free it with blocking.
-                    innerSocket.BlockingRelease();
+                    if (abortive)
+                    {
+                        innerSocket.DangerousRelease();
+                    }
+                    else
+                    {
+                        // Now free it with blocking.
+                        innerSocket.BlockingRelease();
+                    }
                 }
 #if DEBUG
             }
