@@ -237,11 +237,17 @@ namespace System.Text.Json
 
         private static bool IsPrintable(byte value) => value >= 0x20 && value < 0x7F;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static string GetPrintableString(byte value)
+        {
+            return IsPrintable(value) ? ((char)value).ToString() : $"0x{value:X2}";
+        }
+
         // This function will convert an ExceptionResource enum value to the resource string.
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static string GetResourceString(ref Utf8JsonReader json, ExceptionResource resource, byte nextByte, string characters)
         {
-            string character = IsPrintable(nextByte) ? ((char)nextByte).ToString() : $"0x{nextByte:X2}";
+            string character = GetPrintableString(nextByte);
 
             string message = "";
             switch (resource)
@@ -251,6 +257,12 @@ namespace System.Text.Json
                     break;
                 case ExceptionResource.MismatchedObjectArray:
                     message = SR.Format(SR.MismatchedObjectArray, character);
+                    break;
+                case ExceptionResource.TrailingCommaNotAllowedBeforeArrayEnd:
+                    message = SR.TrailingCommaNotAllowedBeforeArrayEnd;
+                    break;
+                case ExceptionResource.TrailingCommaNotAllowedBeforeObjectEnd:
+                    message = SR.TrailingCommaNotAllowedBeforeObjectEnd;
                     break;
                 case ExceptionResource.EndOfStringNotFound:
                     message = SR.EndOfStringNotFound;
@@ -281,6 +293,9 @@ namespace System.Text.Json
                     break;
                 case ExceptionResource.ExpectedStartOfPropertyOrValueNotFound:
                     message = SR.ExpectedStartOfPropertyOrValueNotFound;
+                    break;
+                case ExceptionResource.ExpectedStartOfPropertyOrValueAfterComment:
+                    message = SR.Format(SR.ExpectedStartOfPropertyOrValueAfterComment, character);
                     break;
                 case ExceptionResource.ExpectedStartOfValueNotFound:
                     message = SR.Format(SR.ExpectedStartOfValueNotFound, character);
@@ -500,6 +515,7 @@ namespace System.Text.Json
         ExpectedSeparatorAfterPropertyNameNotFound,
         ExpectedStartOfPropertyNotFound,
         ExpectedStartOfPropertyOrValueNotFound,
+        ExpectedStartOfPropertyOrValueAfterComment,
         ExpectedStartOfValueNotFound,
         ExpectedTrue,
         ExpectedValueAfterPropertyNameNotFound,
@@ -519,7 +535,9 @@ namespace System.Text.Json
         FailedToGetMinimumSizeSpan,
         FailedToGetLargerSpan,
         CannotWritePropertyWithinArray,
-        ExpectedJsonTokens
+        ExpectedJsonTokens,
+        TrailingCommaNotAllowedBeforeArrayEnd,
+        TrailingCommaNotAllowedBeforeObjectEnd,
     }
 
     internal enum NumericType
