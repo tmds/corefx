@@ -55,13 +55,12 @@ namespace System.Net.Sockets
 
         private static readonly object s_lock = new object();
 
-        // In debug builds, force there to be 2 engines. In release builds, use half the number of processors when
-        // there are at least 6. The lower bound is to avoid using multiple engines on systems which aren't servers.
+        // In debug builds, force there to be 2 engines. In release builds, use half the number of processors.
         private static readonly int EngineCount =
 #if DEBUG
             2;
 #else
-            Environment.ProcessorCount >= 6 ? Environment.ProcessorCount / 2 : 1;
+            (Environment.ProcessorCount + 1) / 2;
 #endif
         //
         // The current engines. We replace an engine when it runs out of "handle" values.
@@ -102,7 +101,7 @@ namespace System.Net.Sockets
         //
         private static readonly IntPtr MaxHandles = IntPtr.Size == 4 ? (IntPtr)int.MaxValue : (IntPtr)long.MaxValue;
 #endif
-        private static readonly IntPtr MinHandlesForAdditionalEngine = EngineCount == 1 ? MaxHandles : (IntPtr)32;
+        private static readonly IntPtr MinHandlesForAdditionalEngine = EngineCount == 1 ? MaxHandles : (IntPtr)1500;
 
         //
         // Sentinel handle value to identify events from the "shutdown pipe," used to signal an event loop to stop
