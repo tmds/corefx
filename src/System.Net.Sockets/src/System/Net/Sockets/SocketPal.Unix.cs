@@ -465,7 +465,7 @@ namespace System.Net.Sockets
             }
         }
 
-        public static unsafe bool TryCompleteAccept(SafeSocketHandle socket, byte[] socketAddress, ref int socketAddressLen, out IntPtr acceptedFd, out SocketError errorCode)
+        public static unsafe bool TryCompleteAccept(SafeSocketHandle socket, byte[] socketAddress, bool async, ref int socketAddressLen, out IntPtr acceptedFd, out SocketError errorCode)
         {
             IntPtr fd = IntPtr.Zero;
             Interop.Error errno;
@@ -479,7 +479,7 @@ namespace System.Net.Sockets
                 catch (ObjectDisposedException)
                 {
                     // The socket was closed, or is closing.
-                    errorCode = SocketError.OperationAborted;
+                    errorCode = async ? SocketError.OperationAborted : SocketError.Interrupted;
                     acceptedFd = (IntPtr)(-1);
                     return true;
                 }
@@ -499,7 +499,14 @@ namespace System.Net.Sockets
             acceptedFd = (IntPtr)(-1);
             if (errno != Interop.Error.EAGAIN && errno != Interop.Error.EWOULDBLOCK)
             {
-                errorCode = GetSocketErrorForErrorCode(errno);
+                if (socket.IsClosed)
+                {
+                    errorCode = async ? SocketError.OperationAborted : SocketError.Interrupted;
+                }
+                else
+                {
+                    errorCode = GetSocketErrorForErrorCode(errno);
+                }
                 return true;
             }
 
