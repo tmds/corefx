@@ -591,42 +591,53 @@ namespace System.Net.Sockets
             return true;
         }
 
-        public static bool TryCompleteReceiveFrom(SafeSocketHandle socket, Span<byte> buffer, SocketFlags flags, byte[] socketAddress, ref int socketAddressLen, out int bytesReceived, out SocketFlags receivedFlags, out SocketError errorCode) =>
-            TryCompleteReceiveFrom(socket, buffer, null, flags, socketAddress, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode);
+        public static bool TryCompleteReceiveFrom(SafeSocketHandle socket, Span<byte> buffer, SocketFlags flags, byte[] socketAddress, bool async, ref int socketAddressLen, out int bytesReceived, out SocketFlags receivedFlags, out SocketError errorCode) =>
+            TryCompleteReceiveFrom(socket, buffer, null, flags, socketAddress, async, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode);
 
-        public static bool TryCompleteReceiveFrom(SafeSocketHandle socket, IList<ArraySegment<byte>> buffers, SocketFlags flags, byte[] socketAddress, ref int socketAddressLen, out int bytesReceived, out SocketFlags receivedFlags, out SocketError errorCode) =>
-            TryCompleteReceiveFrom(socket, default(Span<byte>), buffers, flags, socketAddress, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode);
+        public static bool TryCompleteReceiveFrom(SafeSocketHandle socket, IList<ArraySegment<byte>> buffers, SocketFlags flags, byte[] socketAddress, bool async, ref int socketAddressLen, out int bytesReceived, out SocketFlags receivedFlags, out SocketError errorCode) =>
+            TryCompleteReceiveFrom(socket, default(Span<byte>), buffers, flags, socketAddress, async, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode);
 
-        public static unsafe bool TryCompleteReceiveFrom(SafeSocketHandle socket, Span<byte> buffer, IList<ArraySegment<byte>> buffers, SocketFlags flags, byte[] socketAddress, ref int socketAddressLen, out int bytesReceived, out SocketFlags receivedFlags, out SocketError errorCode)
+        public static unsafe bool TryCompleteReceiveFrom(SafeSocketHandle socket, Span<byte> buffer, IList<ArraySegment<byte>> buffers, SocketFlags flags, byte[] socketAddress, bool async, ref int socketAddressLen, out int bytesReceived, out SocketFlags receivedFlags, out SocketError errorCode)
         {
             try
             {
                 Interop.Error errno;
                 int received;
 
-                if (buffers != null)
+                try
                 {
-                    // Receive into a set of buffers
-                    received = Receive(socket, flags, buffers, socketAddress, ref socketAddressLen, out receivedFlags, out errno);
-                }
-                else if (buffer.Length == 0)
-                {
-                    // Special case a receive of 0 bytes into a single buffer.  A common pattern is to ReceiveAsync 0 bytes in order
-                    // to be asynchronously notified when data is available, without needing to dedicate a buffer.  Some platforms (e.g. macOS),
-                    // however complete a 0-byte read successfully when data isn't available, as the request can logically be satisfied
-                    // synchronously. As such, we treat 0 specially, and perform a 1-byte peek.
-                    byte oneBytePeekBuffer;
-                    received = Receive(socket, flags | SocketFlags.Peek, new Span<byte>(&oneBytePeekBuffer, 1), socketAddress, ref socketAddressLen, out receivedFlags, out errno);
-                    if (received > 0)
+                    if (buffers != null)
                     {
-                        // Peeked for 1-byte, but the actual request was for 0.
-                        received = 0;
+                        // Receive into a set of buffers
+                        received = Receive(socket, flags, buffers, socketAddress, ref socketAddressLen, out receivedFlags, out errno);
+                    }
+                    else if (buffer.Length == 0)
+                    {
+                        // Special case a receive of 0 bytes into a single buffer.  A common pattern is to ReceiveAsync 0 bytes in order
+                        // to be asynchronously notified when data is available, without needing to dedicate a buffer.  Some platforms (e.g. macOS),
+                        // however complete a 0-byte read successfully when data isn't available, as the request can logically be satisfied
+                        // synchronously. As such, we treat 0 specially, and perform a 1-byte peek.
+                        byte oneBytePeekBuffer;
+                        received = Receive(socket, flags | SocketFlags.Peek, new Span<byte>(&oneBytePeekBuffer, 1), socketAddress, ref socketAddressLen, out receivedFlags, out errno);
+                        if (received > 0)
+                        {
+                            // Peeked for 1-byte, but the actual request was for 0.
+                            received = 0;
+                        }
+                    }
+                    else
+                    {
+                        // Receive > 0 bytes into a single buffer
+                        received = Receive(socket, flags, buffer, socketAddress, ref socketAddressLen, out receivedFlags, out errno);
                     }
                 }
-                else
+                catch (ObjectDisposedException)
                 {
-                    // Receive > 0 bytes into a single buffer
-                    received = Receive(socket, flags, buffer, socketAddress, ref socketAddressLen, out receivedFlags, out errno);
+                    // The socket was closed, or is closing.
+                    receivedFlags = SocketFlags.None;
+                    bytesReceived = 0;
+                    errorCode = async ? SocketError.OperationAborted : SocketError.ConnectionAborted;
+                    return true;
                 }
 
                 if (received != -1)
@@ -640,7 +651,14 @@ namespace System.Net.Sockets
 
                 if (errno != Interop.Error.EAGAIN && errno != Interop.Error.EWOULDBLOCK)
                 {
-                    errorCode = GetSocketErrorForErrorCode(errno);
+                    if (socket.IsClosed)
+                    {
+                        errorCode = async ? SocketError.OperationAborted : SocketError.ConnectionAborted;
+                    }
+                    else
+                    {
+                        errorCode = GetSocketErrorForErrorCode(errno);
+                    }
                     return true;
                 }
 
@@ -975,7 +993,7 @@ namespace System.Net.Sockets
             else
             {
                 int socketAddressLen = 0;
-                if (!TryCompleteReceiveFrom(handle, buffers, socketFlags, null, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode))
+                if (!TryCompleteReceiveFrom(handle, buffers, socketFlags, null, false /* async */, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode))
                 {
                     errorCode = SocketError.WouldBlock;
                 }
@@ -993,7 +1011,7 @@ namespace System.Net.Sockets
 
             int socketAddressLen = 0;
             SocketError errorCode;
-            bool completed = TryCompleteReceiveFrom(handle, new Span<byte>(buffer, offset, count), socketFlags, null, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode);
+            bool completed = TryCompleteReceiveFrom(handle, new Span<byte>(buffer, offset, count), socketFlags, null, false /* async */, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode);
             return completed ? errorCode : SocketError.WouldBlock;
         }
 
@@ -1006,7 +1024,7 @@ namespace System.Net.Sockets
 
             int socketAddressLen = 0;
             SocketError errorCode;
-            bool completed = TryCompleteReceiveFrom(handle, buffer, socketFlags, null, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode);
+            bool completed = TryCompleteReceiveFrom(handle, buffer, socketFlags, null, false /* async */, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode);
             return completed ? errorCode : SocketError.WouldBlock;
         }
 
@@ -1044,7 +1062,7 @@ namespace System.Net.Sockets
             }
 
             SocketError errorCode;
-            bool completed = TryCompleteReceiveFrom(handle, new Span<byte>(buffer, offset, count), socketFlags, socketAddress, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode);
+            bool completed = TryCompleteReceiveFrom(handle, new Span<byte>(buffer, offset, count), socketFlags, socketAddress, false /* async */, ref socketAddressLen, out bytesTransferred, out socketFlags, out errorCode);
             return completed ? errorCode : SocketError.WouldBlock;
         }
 

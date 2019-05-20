@@ -469,7 +469,7 @@ namespace System.Net.Sockets
                 }
                 else
                 {
-                    return SocketPal.TryCompleteReceiveFrom(context._socket, Buffer.Span, null, Flags, SocketAddress, ref SocketAddressLen, out BytesTransferred, out ReceivedFlags, out ErrorCode);
+                    return SocketPal.TryCompleteReceiveFrom(context._socket, Buffer.Span, null, Flags, SocketAddress, true /* async */, ref SocketAddressLen, out BytesTransferred, out ReceivedFlags, out ErrorCode);
                 }
             }
 
@@ -498,7 +498,7 @@ namespace System.Net.Sockets
             public BufferListReceiveOperation(SocketAsyncContext context) : base(context) { }
 
             protected override bool DoTryComplete(SocketAsyncContext context) =>
-                SocketPal.TryCompleteReceiveFrom(context._socket, default(Span<byte>), Buffers, Flags, SocketAddress, ref SocketAddressLen, out BytesTransferred, out ReceivedFlags, out ErrorCode);
+                SocketPal.TryCompleteReceiveFrom(context._socket, default(Span<byte>), Buffers, Flags, SocketAddress, true /* async */, ref SocketAddressLen, out BytesTransferred, out ReceivedFlags, out ErrorCode);
 
             public override void InvokeCallback(bool allowPooling)
             {
@@ -526,7 +526,7 @@ namespace System.Net.Sockets
             public BufferPtrReceiveOperation(SocketAsyncContext context) : base(context) { }
 
             protected override bool DoTryComplete(SocketAsyncContext context) =>
-                SocketPal.TryCompleteReceiveFrom(context._socket, new Span<byte>(BufferPtr, Length), null, Flags, SocketAddress, ref SocketAddressLen, out BytesTransferred, out ReceivedFlags, out ErrorCode);
+                SocketPal.TryCompleteReceiveFrom(context._socket, new Span<byte>(BufferPtr, Length), null, Flags, SocketAddress, true /* async */, ref SocketAddressLen, out BytesTransferred, out ReceivedFlags, out ErrorCode);
         }
 
         private sealed class ReceiveMessageFromOperation : ReadOperation
@@ -1450,7 +1450,7 @@ namespace System.Net.Sockets
             SocketError errorCode;
             int observedSequenceNumber;
             if (_receiveQueue.IsReady(this, out observedSequenceNumber) &&
-                (SocketPal.TryCompleteReceiveFrom(_socket, buffer.Span, flags, socketAddress, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode) ||
+                (SocketPal.TryCompleteReceiveFrom(_socket, buffer.Span, flags, socketAddress, false /* async */, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode) ||
                 !ShouldRetrySyncOperation(out errorCode)))
             {
                 flags = receivedFlags;
@@ -1478,7 +1478,7 @@ namespace System.Net.Sockets
             SocketError errorCode;
             int observedSequenceNumber;
             if (_receiveQueue.IsReady(this, out observedSequenceNumber) &&
-                (SocketPal.TryCompleteReceiveFrom(_socket, buffer, flags, socketAddress, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode) ||
+                (SocketPal.TryCompleteReceiveFrom(_socket, buffer, flags, socketAddress, false /* async */, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode) ||
                 !ShouldRetrySyncOperation(out errorCode)))
             {
                 flags = receivedFlags;
@@ -1511,7 +1511,7 @@ namespace System.Net.Sockets
             SocketError errorCode;
             int observedSequenceNumber;
             if (_receiveQueue.IsReady(this, out observedSequenceNumber) &&
-                SocketPal.TryCompleteReceiveFrom(_socket, buffer.Span, flags, socketAddress, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode))
+                SocketPal.TryCompleteReceiveFrom(_socket, buffer.Span, flags, socketAddress, true /* async */, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode))
             {
                 return errorCode;
             }
@@ -1557,7 +1557,7 @@ namespace System.Net.Sockets
             SocketError errorCode;
             int observedSequenceNumber;
             if (_receiveQueue.IsReady(this, out observedSequenceNumber) &&
-                (SocketPal.TryCompleteReceiveFrom(_socket, buffers, flags, socketAddress, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode) ||
+                (SocketPal.TryCompleteReceiveFrom(_socket, buffers, flags, socketAddress, false /* async */, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode) ||
                 !ShouldRetrySyncOperation(out errorCode)))
             {
                 flags = receivedFlags;
@@ -1587,7 +1587,7 @@ namespace System.Net.Sockets
             SocketError errorCode;
             int observedSequenceNumber;
             if (_receiveQueue.IsReady(this, out observedSequenceNumber) &&
-                SocketPal.TryCompleteReceiveFrom(_socket, buffers, flags, socketAddress, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode))
+                SocketPal.TryCompleteReceiveFrom(_socket, buffers, flags, socketAddress, true /* async */, ref socketAddressLen, out bytesReceived, out receivedFlags, out errorCode))
             {
                 // Synchronous success or failure
                 return errorCode;
