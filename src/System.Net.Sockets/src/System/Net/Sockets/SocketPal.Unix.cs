@@ -514,7 +514,7 @@ namespace System.Net.Sockets
             return false;
         }
 
-        public static unsafe bool TryStartConnect(SafeSocketHandle socket, byte[] socketAddress, int socketAddressLen, out SocketError errorCode)
+        public static unsafe bool TryStartConnect(SafeSocketHandle socket, byte[] socketAddress, int socketAddressLen, bool async, out SocketError errorCode)
         {
             Debug.Assert(socketAddress != null, "Expected non-null socketAddress");
             Debug.Assert(socketAddressLen > 0, $"Unexpected socketAddressLen: {socketAddressLen}");
@@ -539,7 +539,14 @@ namespace System.Net.Sockets
 
             if (err != Interop.Error.EINPROGRESS)
             {
-                errorCode = GetSocketErrorForErrorCode(err);
+                if (socket.IsClosed)
+                {
+                    errorCode = async ? SocketError.OperationAborted : SocketError.NotSocket;
+                }
+                else
+                {
+                    errorCode = GetSocketErrorForErrorCode(err);
+                }
                 return true;
             }
 
@@ -872,7 +879,7 @@ namespace System.Net.Sockets
             }
 
             SocketError errorCode;
-            bool completed = TryStartConnect(handle, socketAddress, socketAddressLen, out errorCode);
+            bool completed = TryStartConnect(handle, socketAddress, socketAddressLen, false /* async */, out errorCode);
             if (completed)
             {
                 handle.RegisterConnectResult(errorCode);

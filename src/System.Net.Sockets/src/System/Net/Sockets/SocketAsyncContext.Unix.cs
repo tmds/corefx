@@ -1372,7 +1372,7 @@ namespace System.Net.Sockets
             SocketError errorCode;
             int observedSequenceNumber;
             _sendQueue.IsReady(this, out observedSequenceNumber);
-            if (SocketPal.TryStartConnect(_socket, socketAddress, socketAddressLen, out errorCode))
+            if (SocketPal.TryStartConnect(_socket, socketAddress, socketAddressLen, false /* async */, out errorCode))
             {
                 _socket.RegisterConnectResult(errorCode);
                 return errorCode;
@@ -1403,7 +1403,7 @@ namespace System.Net.Sockets
             SocketError errorCode;
             int observedSequenceNumber;
             _sendQueue.IsReady(this, out observedSequenceNumber);
-            if (SocketPal.TryStartConnect(_socket, socketAddress, socketAddressLen, out errorCode))
+            if (SocketPal.TryStartConnect(_socket, socketAddress, socketAddressLen, true /* async */, out errorCode))
             {
                 _socket.RegisterConnectResult(errorCode);
                 return errorCode;
