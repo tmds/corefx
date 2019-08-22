@@ -25,57 +25,39 @@ public partial class ConsoleEncoding
     [MemberData(nameof(InputData))]
     public void TestEncoding(string inputString)
     {
-        TextWriter outConsoleStream = Console.Out;
-        TextReader inConsoleStream = Console.In;
+        byte [] inputBytes;
+        byte [] inputBytesNoBom = Console.OutputEncoding.GetBytes(inputString);
+        byte [] bom = Console.OutputEncoding.GetPreamble();
 
-        try
+        if (bom.Length > 0)
         {
-            byte [] inputBytes;
-            byte [] inputBytesNoBom = Console.OutputEncoding.GetBytes(inputString);
-            byte [] bom = Console.OutputEncoding.GetPreamble();
+            inputBytes = new byte[inputBytesNoBom.Length + bom.Length];
+            Array.Copy(bom, inputBytes, bom.Length);
+            Array.Copy(inputBytesNoBom, 0, inputBytes, bom.Length, inputBytesNoBom.Length);
+        }
+        else
+        {
+            inputBytes = inputBytesNoBom;
+        }
 
-            if (bom.Length > 0)
-            {
-                inputBytes = new byte[inputBytesNoBom.Length + bom.Length];
-                Array.Copy(bom, inputBytes, bom.Length);
-                Array.Copy(inputBytesNoBom, 0, inputBytes, bom.Length, inputBytesNoBom.Length);
-            }
-            else
-            {
-                inputBytes = inputBytesNoBom;
-            }
-
-            byte[] outBytes = new byte[inputBytes.Length];
-            using (MemoryStream ms = new MemoryStream(outBytes, true))
-            {
-                using (StreamWriter sw = new StreamWriter(ms, Console.OutputEncoding))
-                {
-                    Console.SetOut(sw);
-                    Console.Write(inputString);
-                }
-            }
+        byte[] outBytes = new byte[inputBytes.Length];
+        Helpers.RunWithConsoleOut(new StreamWriter(new MemoryStream(outBytes, true), Console.OutputEncoding) { AutoFlush = true },
+        () =>
+        {
+            Console.Write(inputString);
 
             Assert.Equal(inputBytes, outBytes);
+        });
 
-            string inString = new string(Console.InputEncoding.GetChars(inputBytesNoBom));
-
-            string outString;
-            using (MemoryStream ms = new MemoryStream(inputBytesNoBom, false))
-            {
-                using (StreamReader sr = new StreamReader(ms, Console.InputEncoding))
-                {
-                    Console.SetIn(sr);
-                    outString = Console.In.ReadToEnd();
-                }
-            }
-
-            Assert.True(inString.Equals(outString), $"Encoding: {Console.InputEncoding}, Codepage: {Console.InputEncoding.CodePage}, Expected: {inString}, Actual: {outString} ");
-        }
-        finally
+        string inString = new string(Console.InputEncoding.GetChars(inputBytesNoBom));
+        string outString = null;
+        Helpers.RunWithConsoleIn(new StreamReader(new MemoryStream(inputBytesNoBom, false), Console.InputEncoding),
+        () =>
         {
-            Console.SetOut(outConsoleStream);
-            Console.SetIn(inConsoleStream);
-        }
+            outString = Console.In.ReadToEnd();
+        });
+
+        Assert.True(inString.Equals(outString), $"Encoding: {Console.InputEncoding}, Codepage: {Console.InputEncoding.CodePage}, Expected: {inString}, Actual: {outString} ");
     }
 
     [Fact]

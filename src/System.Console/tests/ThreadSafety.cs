@@ -43,6 +43,8 @@ public class ThreadSafety
     [Fact]
     public static void SetStandardXXXCanBeCalledConcurrently()
     {
+        Helpers.ConsoleSetStreamGate.Wait();
+
         TextReader savedStandardInput = Console.In;
         TextWriter savedStandardOutput = Console.Out;
         TextWriter savedStandardError = Console.Error;
@@ -79,6 +81,8 @@ public class ThreadSafety
             Console.SetIn(savedStandardInput);
             Console.SetOut(savedStandardOutput);
             Console.SetError(savedStandardError);
+
+            Helpers.ConsoleSetStreamGate.Release();
         }
     }
 
@@ -87,40 +91,31 @@ public class ThreadSafety
     {
         const char TestChar = '+';
 
-        TextReader savedStandardInput = Console.In;
-        try
+        using (MemoryStream memStream = new MemoryStream())
         {
-            using (MemoryStream memStream = new MemoryStream())
+            using (StreamWriter sw = new StreamWriter(memStream))
             {
-                using (StreamWriter sw = new StreamWriter(memStream))
+                for (int i = 0; i < NumberOfIterations; i++)
                 {
-                    for (int i = 0; i < NumberOfIterations; i++)
-                    {
-                        sw.Write(TestChar);
-                    }
-
-                    sw.Flush();
-
-                    memStream.Seek(0, SeekOrigin.Begin);
-
-                    using (StreamReader sr = new StreamReader(memStream))
-                    {
-                        Console.SetIn(sr);
-
-                        Parallel.For(0, NumberOfIterations, i =>
-                        {
-                            Assert.Equal(TestChar, Console.Read());
-                        });
-
-                        // We should be at EOF now.
-                        Assert.Equal(-1, Console.Read());
-                    }
+                    sw.Write(TestChar);
                 }
+
+                sw.Flush();
+
+                memStream.Seek(0, SeekOrigin.Begin);
+
+                Helpers.RunWithConsoleIn(new StreamReader(memStream),
+                () =>
+                {
+                    Parallel.For(0, NumberOfIterations, i =>
+                    {
+                        Assert.Equal(TestChar, Console.Read());
+                    });
+
+                    // We should be at EOF now.
+                    Assert.Equal(-1, Console.Read());
+                });
             }
-        }
-        finally
-        {
-            Console.SetIn(savedStandardInput);
         }
     }
 }

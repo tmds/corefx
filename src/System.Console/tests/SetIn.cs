@@ -14,15 +14,7 @@ public class SetIn
     [Fact]
     public static void SetInThrowsOnNull()
     {
-        TextReader savedIn = Console.In;
-        try
-        {
-            Assert.Throws<ArgumentNullException>(() => Console.SetIn(null));
-        }
-        finally
-        {
-            Console.SetIn(savedIn);
-        }
+        Assert.Throws<ArgumentNullException>(() => Helpers.RunWithConsoleIn(null, () => {} ));
     }
 
     [Fact]
@@ -30,37 +22,24 @@ public class SetIn
     {
         const string TextStringFormat = "Test {0}";
 
-        TextReader oldInToRestore = Console.In;
-        try
+        MemoryStream memStream = new MemoryStream();
+        StreamWriter sw = new StreamWriter(memStream);
+        for (int i = 0; i < 20; i++)
         {
-            using (MemoryStream memStream = new MemoryStream())
+            sw.WriteLine(string.Format(TextStringFormat, i));
+        }
+        sw.Flush();
+        memStream.Seek(0, SeekOrigin.Begin);
+
+        Helpers.RunWithConsoleIn(new StreamReader(memStream),
+        () =>
+        {
+            Assert.NotNull(Console.In);
+
+            for (int i = 0; i < 20; i++)
             {
-                using (StreamWriter sw = new StreamWriter(memStream))
-                {
-                    for (int i = 0; i < 20; i++)
-                    {
-                        sw.WriteLine(string.Format(TextStringFormat, i));
-                    }
-
-                    sw.Flush();
-                    memStream.Seek(0, SeekOrigin.Begin);
-
-                    using (StreamReader sr = new StreamReader(memStream))
-                    {
-                        Console.SetIn(sr);
-                        Assert.NotNull(Console.In);
-
-                        for (int i = 0; i < 20; i++)
-                        {
-                            Assert.Equal(string.Format(TextStringFormat, i), Console.ReadLine());
-                        }
-                    }
-                }
+                Assert.Equal(string.Format(TextStringFormat, i), Console.ReadLine());
             }
-        }
-        finally
-        {
-            Console.SetIn(oldInToRestore);
-        }
+        });
     }
 }

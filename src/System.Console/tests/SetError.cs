@@ -11,26 +11,24 @@ public class SetError
     [Fact]
     public static void SetErrorThrowsOnNull()
     {
-        TextWriter savedError = Console.Error;
-        try
-        {
-            Assert.Throws<ArgumentNullException>(() => Console.SetError(null));
-        }
-        finally
-        {
-            Console.SetError(savedError);
-        }
+        Assert.Throws<ArgumentNullException>(() => Helpers.RunWithConsoleError(null, () => {} ));
     }
 
     [Fact]
     public static void SetErrorRead()
     {
-        Helpers.SetAndReadHelper(tw => Console.SetError(tw), () => Console.Error, sr => sr.ReadLine());
+        Helpers.RunInRedirectedError(memStream =>
+        {
+            Helpers.WriteAndReadHelper(memStream, () => Console.Error, sr => sr.ReadLine());
+        });
     }
 
     [Fact]
     public static void SetErrorReadToEnd()
     {
-        Helpers.SetAndReadHelper(tw => Console.SetError(tw), () => Console.Error, sr => sr.ReadToEnd());
+        Helpers.RunInRedirectedError(memStream =>
+        {
+            Helpers.WriteAndReadHelper(memStream, () => Console.Error, sr => sr.ReadToEnd());
+        });
     }
 }

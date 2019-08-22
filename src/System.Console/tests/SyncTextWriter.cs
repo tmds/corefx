@@ -16,11 +16,10 @@ public class SyncTextWriter
     [Fact]
     public void SyncTextWriterLockedOnThis()
     {
-        TextWriter oldWriter = Console.Out;
-        try
+        Helpers.RunWithConsoleOut(new CallbackTextWriter(),
+        sw =>
         {
-            var newWriter = new CallbackTextWriter();
-            Console.SetOut(newWriter);
+            CallbackTextWriter newWriter = sw as CallbackTextWriter;
             TextWriter syncWriter = Console.Out;
 
             newWriter.Callback = () =>
@@ -32,12 +31,7 @@ public class SyncTextWriter
 
             Console.Write("{0}", 32);
             Assert.True(newWriter.WriteFormatCalled);
-
-        }
-        finally
-        {
-            Console.SetOut(oldWriter);
-        }
+        });
     }
 
     private sealed class CallbackTextWriter : TextWriter

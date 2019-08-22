@@ -45,36 +45,18 @@ public class SyncTextReader
         TextWriter savedStandardOutput = Console.Out;
         TextReader savedStandardInput = Console.In;
 
-        try
+        using (MemoryStream memStream = new MemoryStream())
         {
-            using (MemoryStream memStream = new MemoryStream())
+            // Write the content, but leave the stream open.
+            using (StreamWriter sw = new StreamWriter(memStream, Encoding.Unicode, 1024, true))
             {
-                // Write the content, but leave the stream open.
-                using (StreamWriter sw = new StreamWriter(memStream, Encoding.Unicode, 1024, true))
-                {
-                    sw.Write(content);
-                    sw.Flush();
-                }
-
-                memStream.Seek(0, SeekOrigin.Begin);
-
-                using (StreamReader sr = new StreamReader(memStream))
-                {
-                    Console.SetIn(sr);
-                    action();
-                }
-
+                sw.Write(content);
+                sw.Flush();
             }
-        }
-        finally
-        {
-            TextWriter oldWriter = Console.Out;
-            Console.SetOut(savedStandardOutput);
-            oldWriter.Dispose();
 
-            TextReader oldReader = Console.In;
-            Console.SetIn(savedStandardInput);
-            oldReader.Dispose();
+            memStream.Seek(0, SeekOrigin.Begin);
+
+            Helpers.RunWithConsoleIn(new StreamReader(memStream), action);
         }
     }
 

@@ -13,22 +13,11 @@ public class ReadAndWrite
     [Fact]
     public static void WriteOverloads()
     {
-        TextWriter savedStandardOutput = Console.Out;
-        try
+        Helpers.RunWithConsoleOut(new StreamWriter(new MemoryStream()),
+        () =>
         {
-            using (MemoryStream memStream = new MemoryStream())
-            {
-                using (StreamWriter sw = new StreamWriter(memStream))
-                {
-                    Console.SetOut(sw);
-                    WriteCore();
-                }
-            }
-        }
-        finally
-        {
-            Console.SetOut(savedStandardOutput);
-        }
+            WriteCore();
+        });
     }
 
     [Fact]
@@ -48,22 +37,11 @@ public class ReadAndWrite
     [Fact]
     public static void WriteLineOverloads()
     {
-        TextWriter savedStandardOutput = Console.Out;
-        try
+        Helpers.RunWithConsoleOut(new StreamWriter(new MemoryStream()),
+        () =>
         {
-            using (MemoryStream memStream = new MemoryStream())
-            {
-                using (StreamWriter sw = new StreamWriter(memStream))
-                {
-                    Console.SetOut(sw);
-                    WriteLineCore();
-                }
-            }
-        }
-        finally
-        {
-            Console.SetOut(savedStandardOutput);
-        }
+            WriteLineCore();
+        });
     }
 
     [Fact]
@@ -142,57 +120,50 @@ public class ReadAndWrite
     [Fact]
     public static async Task OutWriteAndWriteLineOverloads()
     {
-        TextWriter savedStandardOutput = Console.Out;
-        try
+        var sw = new StreamWriter(new MemoryStream());
+        await Helpers.RunWithConsoleOutAsync(sw,
+        async () =>
         {
-            using (var sw = new StreamWriter(new MemoryStream()))
-            {
-                Console.SetOut(sw);
-                TextWriter writer = Console.Out;
-                Assert.NotNull(writer);
-                Assert.NotEqual(writer, sw); // the writer we provide gets wrapped
+            TextWriter writer = Console.Out;
+            Assert.NotNull(writer);
+            Assert.NotEqual(writer, sw); // the writer we provide gets wrapped
 
-                // We just want to ensure none of these throw exceptions, we don't actually validate
-                // what was written.
+            // We just want to ensure none of these throw exceptions, we don't actually validate
+            // what was written.
 
-                writer.Write("{0}", 32);
-                writer.Write("{0} {1}", 32, "Hello");
-                writer.Write("{0} {1} {2}", 32, "Hello", (uint)50);
-                writer.Write("{0} {1} {2} {3}", 32, "Hello", (uint)50, (ulong)5);
-                writer.Write("{0} {1} {2} {3} {4}", 32, "Hello", (uint)50, (ulong)5, 'a');
-                writer.Write(true);
-                writer.Write('a');
-                writer.Write(new char[] { 'a', 'b', 'c', 'd', });
-                writer.Write(new char[] { 'a', 'b', 'c', 'd', }, 1, 2);
-                writer.Write(1.23d);
-                writer.Write(123.456M);
-                writer.Write(1.234f);
-                writer.Write(39);
-                writer.Write(50u);
-                writer.Write(50L);
-                writer.Write(50UL);
-                writer.Write(new object());
-                writer.Write("Hello World");
+            writer.Write("{0}", 32);
+            writer.Write("{0} {1}", 32, "Hello");
+            writer.Write("{0} {1} {2}", 32, "Hello", (uint)50);
+            writer.Write("{0} {1} {2} {3}", 32, "Hello", (uint)50, (ulong)5);
+            writer.Write("{0} {1} {2} {3} {4}", 32, "Hello", (uint)50, (ulong)5, 'a');
+            writer.Write(true);
+            writer.Write('a');
+            writer.Write(new char[] { 'a', 'b', 'c', 'd', });
+            writer.Write(new char[] { 'a', 'b', 'c', 'd', }, 1, 2);
+            writer.Write(1.23d);
+            writer.Write(123.456M);
+            writer.Write(1.234f);
+            writer.Write(39);
+            writer.Write(50u);
+            writer.Write(50L);
+            writer.Write(50UL);
+            writer.Write(new object());
+            writer.Write("Hello World");
 
-                writer.Flush();
+            writer.Flush();
 
-                await writer.WriteAsync('c');
-                await writer.WriteAsync(new char[] { 'a', 'b', 'c', 'd' });
-                await writer.WriteAsync(new char[] { 'a', 'b', 'c', 'd' }, 1, 2);
-                await writer.WriteAsync("Hello World");
+            await writer.WriteAsync('c');
+            await writer.WriteAsync(new char[] { 'a', 'b', 'c', 'd' });
+            await writer.WriteAsync(new char[] { 'a', 'b', 'c', 'd' }, 1, 2);
+            await writer.WriteAsync("Hello World");
 
-                await writer.WriteLineAsync('c');
-                await writer.WriteLineAsync(new char[] { 'a', 'b', 'c', 'd' });
-                await writer.WriteLineAsync(new char[] { 'a', 'b', 'c', 'd' }, 1, 2);
-                await writer.WriteLineAsync("Hello World");
+            await writer.WriteLineAsync('c');
+            await writer.WriteLineAsync(new char[] { 'a', 'b', 'c', 'd' });
+            await writer.WriteLineAsync(new char[] { 'a', 'b', 'c', 'd' }, 1, 2);
+            await writer.WriteLineAsync("Hello World");
 
-                await writer.FlushAsync();
-            }
-        }
-        finally
-        {
-            Console.SetOut(savedStandardOutput);
-        }
+            await writer.FlushAsync();
+        });
     }
 
     private static unsafe void ValidateConsoleEncoding(Encoding encoding)
@@ -335,48 +306,40 @@ public class ReadAndWrite
     [Fact]
     public static void ReadAndReadLine()
     {
-        TextWriter savedStandardOutput = Console.Out;
-        TextReader savedStandardInput = Console.In;
-
-        try
+        using (MemoryStream memStream = new MemoryStream())
         {
-            using (MemoryStream memStream = new MemoryStream())
+            Helpers.RunWithConsoleOut(new StreamWriter(memStream, leaveOpen: true),
+            writer =>
             {
-                using (StreamWriter sw = new StreamWriter(memStream))
+                StreamWriter sw = writer as StreamWriter;
+
+                sw.WriteLine(string.Join(Environment.NewLine, s_testLines));
+                sw.Flush();
+            });
+
+            memStream.Seek(0, SeekOrigin.Begin);
+
+            Helpers.RunWithConsoleIn(new StreamReader(memStream),
+            reader =>
+            {
+                StreamReader sr = reader as StreamReader;
+
+                for (int i = 0; i < s_testLines[0].Length; i++)
                 {
-                    sw.WriteLine(string.Join(Environment.NewLine, s_testLines));
-                    sw.Flush();
-
-                    memStream.Seek(0, SeekOrigin.Begin);
-
-                    using (StreamReader sr = new StreamReader(memStream))
-                    {
-                        Console.SetIn(sr);
-
-                        for (int i = 0; i < s_testLines[0].Length; i++)
-                        {
-                            Assert.Equal(s_testLines[0][i], Console.Read());
-                        }
-
-                        // Read the newline at the end of the first line.
-                        Assert.Equal("", Console.ReadLine());
-
-                        for (int i = 1; i < s_testLines.Length; i++)
-                        {
-                            Assert.Equal(s_testLines[i], sr.ReadLine());
-                        }
-
-                        // We should be at EOF now.
-                        Assert.Equal(-1, Console.Read());
-                    }
+                    Assert.Equal(s_testLines[0][i], Console.Read());
                 }
-            }
 
-        }
-        finally
-        {
-            Console.SetOut(savedStandardOutput);
-            Console.SetIn(savedStandardInput);
+                // Read the newline at the end of the first line.
+                Assert.Equal("", Console.ReadLine());
+
+                for (int i = 1; i < s_testLines.Length; i++)
+                {
+                    Assert.Equal(s_testLines[i], sr.ReadLine());
+                }
+
+                // We should be at EOF now.
+                Assert.Equal(-1, Console.Read());
+            });
         }
     }
 
